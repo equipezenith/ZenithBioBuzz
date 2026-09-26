@@ -31,7 +31,7 @@ public class funcoes extends chassi  {
     public funcoes (HardwareMap hardwareMap, Telemetry telemetry) {
         super(hardwareMap);
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
-        motor_sho.setDirection(DcMotor.Direction.REVERSE);
+        motor_sho.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_in =  hardwareMap.get(DcMotorEx.class, "motorIn");
         indexer = hardwareMap.get(Servo.class, "indexer");
         indexer.setPosition(0.0);
@@ -64,13 +64,24 @@ public class funcoes extends chassi  {
         }
     }
 
-    public void shooter(Gamepad gamepad2, Telemetry telemetry){
-        double ticks_per_second = (130/60.0) * TICKS_PER_REV;
-        if (gamepad2.right_trigger > 0) {
-            motor_sho.setVelocity(1 * ticks_per_second);
-        } else {
-            motor_sho.setVelocity(0);
-        }
+    public void shooter(Telemetry telemetry){
+        double ticks_per_second = (2400/60.0) * 28;
+        boolean velocidade_MAX = false;
+            if (velocidade_MAX && motor_sho.getVelocity() < ticks_per_second * 0.90){
+                motor_sho.setPower(1);
+            }
+            else {
+                motor_sho.setVelocity(1 * ticks_per_second);
+                if (motor_sho.getVelocity() >= ticks_per_second * 0.97) {
+                    velocidade_MAX = true;
+                }
+            }
+            telemetry.addData("Velocidade Atual", motor_sho.getVelocity());
+            telemetry.addData("Velocidade Alvo", ticks_per_second);
+            telemetry.addData("Shooter Pronto", velocidade_MAX);
+            telemetry.update();
+            motor_in.setPower(0.4);
+
     }
 
 
