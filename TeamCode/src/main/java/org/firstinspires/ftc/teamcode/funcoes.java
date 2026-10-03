@@ -13,7 +13,8 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
-public class funcoes extends chassi  {
+public class
+funcoes extends chassi  {
     int atag0;
     int atag1;
     int atag2;
@@ -33,6 +34,7 @@ public class funcoes extends chassi  {
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
         motor_sho.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_in =  hardwareMap.get(DcMotorEx.class, "motorIn");
+        motor_in.setDirection(DcMotorSimple.Direction.REVERSE);
         indexer = hardwareMap.get(Servo.class, "indexer");
         indexer.setPosition(0.0);
         vision.init(hardwareMap);
@@ -71,9 +73,13 @@ public class funcoes extends chassi  {
                 motor_sho.setPower(1);
             }
             else {
-                motor_sho.setVelocity(1 * ticks_per_second);
-                if (motor_sho.getVelocity() >= ticks_per_second * 0.97) {
-                    velocidade_MAX = true;
+                if (motor_sho.getVelocity() + 40 >= ticks_per_second) {
+                    motor_sho.setVelocity(1 * ticks_per_second);
+                    if (motor_sho.getVelocity() >= ticks_per_second * 0.97) {
+                        velocidade_MAX = true;
+                    }
+                } else {
+                    motor_sho.setPower(1);
                 }
             }
             telemetry.addData("Velocidade Atual", motor_sho.getVelocity());

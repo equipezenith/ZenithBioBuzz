@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Zenith_style.css">
+    <title>Sua Dashboard</title>
+
+</head>
+<body>
+    <header>
+        <img src="assets/Logo_Zenith_Dashboard.png" alt="logo da Zenith" class="ImageHeader">
+        <h1 class="titulo">Zenith Dashboard</h1>
+        <h1 class="Timer"><span id="timer">00:00</span></h1>
+    </header>
+    <main>
+        <div class="Odometria_Arena" id="Arena_img">
+            <h2>Arena BioBuzz</h2>
+            <div class="mapa-wrapper">
+                <img src="assets/Arena_SemELe.png" alt="Arena BioBuzz" class="Arena">
+                <div id="marcador-robo"> <img src="assets/Logo_zenith.png" alt="logo"></div>
+            </div>
+        </div>
+        <div class="Coluna_Meio">
+            <div class="Quadro_inf">
+                <h2>Ativações e informações:</h2>
+                <h3>Motor do elevador: <span class="led-status desligado" id="elevador"></span></h3>
+                <h3>Motor do intake: <span class="led-status desligado" id="intake"></span></h3>
+                <h3>Localização atual eixo X: <span id="valor-x">0.0</span></h3>
+                <h3>Localização atual eixo Y: <span id="valor-y">0.0</span></h3>
+            </div>
+            <div class="Quadro_Historico">
+                <h2>Histórico de Treinos</h2>
+                <table id="tabela-historico">
+                    <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Autônomo</th>
+                        <th>TeleOp</th>
+                        <th>Total</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpo-tabela">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="Quadro_Pont">
+            <h1>Quadro de pontução </h1>
+            <div class="Quadro_de_Pontos" >
+                <h2>Autonomo</h2>
+                <h3>Pontos saida: <span id="pts-auto-saida">0</span></h3>
+                <h3>Pontos missão: <span id="pts-auto-missao">0</span></h3>
+                <h3>Total: <span id="pontos-auto">0</span></h3>
+            </div>
+            <div class="Quadro_de_Pontos">
+                <h2>TeleOperado </h2>
+                <h3>Pontos de missão: <span id="pts-tele-missao">0</span></h3>
+                <h3>Pontos de end game: <span id="pts-tele-endgame">0</span></h3>
+                <h3>Total: <span id="pontos-tele">0</span></h3>
+            </div>
+            <div class="Quadro_de_Pontos">
+                <h2>Pontos totais esperados: </h2>
+                <h1><span id="poonts-total">0</span></h1>
+            </div>
+        </div>
+        <!-- Pop-up Dialog com Detalhes da Partida Selecionada -->
+        <!-- Dialog com o novo gráfico em rampa e dados integrados ao histórico -->
+        <dialog id="dialog-detalhes">
+            <button class="btn-fechar" onclick="fecharDetalhes()">&times;</button>
+            <h2 id="modal-titulo">Partida #0 - Data</h2>
+
+            <div class="modal-grid">
+                <!-- Card Pontos Esperados -->
+                <div class="card-detalhe">
+                    <span class="card-label">Pontos esperados</span>
+                    <span class="card-valor" id="modal-esperados">-</span>
+                </div>
+
+                <!-- Card Pontos Feitos -->
+                <div class="card-detalhe">
+                    <span class="card-label">PONTOS FEITOS</span>
+                    <span class="card-valor" id="modal-feitos">-</span>
+                </div>
+
+                <!-- Card Taxa de Conversão -->
+                <div class="card-detalhe">
+                    <span class="card-label">Taxa de conversao</span>
+                    <span class="card-valor" id="modal-conversao">-</span>
+                </div>
+
+                <!--Tabela Cruzada com dados do Autônomo e TeleOp -->
+                <div class="card-detalhe card-tabela-cruzada">
+                    <div class="tabela-cruzada-grid">
+                        <div class="celula celula-header border-r border-b">xPTS</div>
+                        <div class="celula celula-header border-b">Pontos</div>
+                        <div class="celula border-r border-b" id="modal-xauto">0p</div>
+                        <div class="celula border-b" id="modal-rauto">0</div>
+                        <div class="celula border-r" id="modal-xtele">0p</div>
+                        <div class="celula" id="modal-rtele">0p</div>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Desempenho Dinâmico -->
+                <div class="card-detalhe card-grafico">
+                    <svg viewBox="0 0 300 120" class="grafico-svg">
+                        <!-- Linhas de grade horizontais -->
+                        <line x1="0" y1="25" x2="300" y2="25" stroke="#4a4e52" stroke-width="0.5"/>
+                        <line x1="0" y1="65" x2="300" y2="65" stroke="#4a4e52" stroke-width="0.5"/>
+                        <line x1="0" y1="105" x2="300" y2="105" stroke="#4a4e52" stroke-width="0.5"/>
+
+                        <!-- Eixo do Tempo (X) -->
+                        <text x="5" y="118" fill="#aaa" font-size="9">2:30</text>
+                        <text x="60" y="118" fill="#aaa" font-size="9">2:00</text>
+                        <text x="115" y="118" fill="#aaa" font-size="9">1:30</text>
+                        <text x="170" y="118" fill="#aaa" font-size="9">1:00</text>
+                        <text x="225" y="118" fill="#aaa" font-size="9">0:30</text>
+                        <text x="275" y="118" fill="#aaa" font-size="9">0:00</text>
+
+                        <!-- ONDE O JAVASCRIPT VAI DESENHAR A CURVA -->
+                        <g id="grafico-dinamico"></g>
+                    </svg>
+                </div>
+
+                <!-- Frequência Média -->
+                <div class="card-detalhe">
+                    <span class="card-label">Frequência media:</span>
+                    <span class="card-valor" id="modal-freq">10s</span>
+                </div>
+
+
+                <!-- Ciclo mais rápido -->
+                <div class="card-detalhe">
+                    <span class="card-label">Ciclo mais rapido</span>
+                    <span class="card-valor" id="modal-ciclo">8s</span>
+                </div>
+                <div class="modal-rodape">
+                    <button class="btn-excluir" onclick="excluirPartida()">Excluir Partida</button>
+                </div>
+            </div>
+        </dialog>
+        <script>
+            // Configurações e Variáveis Globais
+            const REGRAS_PONTUACAO = {
+                'Hive': { auto: 20, tele: 20 },
+                'Saida':   { auto: 3,  tele: 0 },
+                'Estacionar':   { auto: 5,  tele: 5 }
+            };
+
+            let partidaAbertaIndex = null;
+            let estadoAnteriorMecanismos = {};
+            let tempoRestante = 150;
+            let timerInterval = null;
+            let pontosAutoAtual = 0;
+            let pontosTeleAtual = 0;
+            let pontosAutoSaida = 0;
+            let pontosAutoMissao = 0;
+            let pontosTeleMissao = 0;
+            //let pontoTeleEndGame = 0;
+
+            let ganhouPontoSaida = false;
+            let tempoSaidaAuto = null;
+
+            // Novos vetores para o Gráfico e Ciclos
+            let temposGrafico = []; // Guarda os segundos para o Eixo X
+            let pontosGrafico = []; // Guarda os pontos acumulados para o Eixo Y
+            let temposAtivacao = [];
+            let temposCiclos = [];  // Guarda a diferença de tempo (em segundos) entre as ações
+
+            document.addEventListener("DOMContentLoaded", () => {
+                renderizarTabela();
+            });
+
+            function atualizarMarcador(x, y) {
+                const marcador = document.getElementById('marcador-robo');
+                if (marcador) {
+                    marcador.style.left = x + '%';
+                    marcador.style.top = y + '%';
+                }
+            }
+
+            // Controle do Cronômetro
+            function iniciarRound() {
+                pontosAutoAtual = 0;
+                pontosTeleAtual = 0;
+                pontosAutoSaida = 0;
+                pontosAutoMissao = 0;
+                pontosTeleMissao = 0;
+                //pontosTeleEndGame = 0;
+                tempoRestante = 150;
+                estadoAnteriorMecanismos = {};
+
+                // Inicia o gráfico no tempo 150s com 0 pontos
+                temposGrafico = [150];
+                pontosGrafico = [0];
+                temposCiclos = [];
+                temposAtivacao = [];
+
+                atualizarPlacarTela();
+                atualizarExibicaoTimer();
+
+                if (timerInterval) clearInterval(timerInterval);
+
+                timerInterval = setInterval(() => {
+                    tempoRestante--;
+                    atualizarExibicaoTimer();
+
+                    if (tempoRestante <= 0) {
+                        clearInterval(timerInterval);
+                        adicionarRodada(pontosAutoAtual, pontosTeleAtual);
+                    }
+                }, 1000);
+            }
+
+            function atualizarExibicaoTimer() {
+                const minutos = Math.floor(tempoRestante / 60).toString().padStart(2, '0');
+                const segundos = (tempoRestante % 60).toString().padStart(2, '0');
+                const elTimer = document.getElementById("timer");
+                if (elTimer) elTimer.innerText = `${minutos}:${segundos}`;
+            }
+
+            function atualizarPlacarTela() {
+                // Atualiza os Totais Gerais
+                const elAutoTotal = document.getElementById("pontos-auto");
+                const elTeleTotal = document.getElementById("pontos-tele");
+                const elTotal = document.getElementById("pontos-total");
+
+                if (elAutoTotal) elAutoTotal.innerText = pontosAutoAtual;
+                if (elTeleTotal) elTeleTotal.innerText = pontosTeleAtual;
+                if (elTotal) elTotal.innerText = pontosAutoAtual + pontosTeleAtual;
+
+                // Atualiza as Subcategorias Específicas
+                const elAutoSaida = document.getElementById("pontos-auto-saida"); // Ajuste o ID se necessário
+                const elAutoMissao = document.getElementById("pontos-auto-missao"); // Ajuste o ID se necessário
+                const elTeleMissao = document.getElementById("pontos-tele-missao"); // Ajuste o ID se necessário
+
+                if (elAutoSaida) elAutoSaida.innerText = pontosAutoSaida;
+                if (elAutoMissao) elAutoMissao.innerText = pontosAutoMissao;
+                if (elTeleMissao) elTeleMissao.innerText = pontosTeleMissao;
+            }
+
+            // Leitura dos Motores
+            function atualizarMotor(idMotor, status) {
+                const led = document.getElementById(idMotor);
+                if (!led) return;
+
+                const statusLimpo = status.toLowerCase().trim();
+                const estaAtivoAgora = (statusLimpo === "ligado" || statusLimpo === "true" || statusLimpo === "1");
+                const estavaAtivoAntes = estadoAnteriorMecanismos[idMotor] || false;
+
+                if (!estavaAtivoAntes && estaAtivoAgora) {
+                    const faseJogo = tempoRestante > 120 ? 'auto' : 'tele';
+                    let pontuou = false;
+                    let ehMecanismoDeCiclo = false; // Flag para proteger a conta dos ciclos
+
+                    // 1. PONTUAÇÃO DE SAÍDA / MOBILIDADE
+                    if (idMotor === 'rodas' && faseJogo === 'auto' && !ganhouPontoSaida) {
+                        ganhouPontoSaida = true;
+                        tempoSaidaAuto = tempoRestante;
+
+                        pontosAutoSaida += PONTOS_SAIDA_AUTO; // Conta para a tela de Saída
+                        pontosAutoAtual += PONTOS_SAIDA_AUTO; // Conta para o Total Auto
+
+                        pontuou = true;
+                    }
+
+                    // 2. PONTUAÇÃO DOS MECANISMOS (Missões)
+                    if (REGRAS_PONTUACAO[idMotor]) {
+                        const pontosGanhos = REGRAS_PONTUACAO[idMotor][faseJogo];
+
+                        if (faseJogo === 'auto') {
+                            pontosAutoMissao += pontosGanhos; // Conta para Missão Auto
+                            pontosAutoAtual += pontosGanhos;
+                        } else {
+                            pontosTeleMissao += pontosGanhos; // Conta para Missão OP
+                            pontosTeleAtual += pontosGanhos;
+                        }
+
+                        pontuou = true;
+                        ehMecanismoDeCiclo = true;
+                    }
+
+                    // 3. ATUALIZAÇÃO DOS VETORES
+                    if (pontuou) {
+                        atualizarPlacarTela();
+
+                        // A) TODOS os pontos entram aqui para formar o desenho do Gráfico
+                        temposGrafico.push(tempoRestante);
+                        pontosGrafico.push(pontosAutoAtual + pontosTeleAtual);
+
+                        // B) APENAS os mecanismos entram aqui para fazer a subtração de tempo (Ciclos)
+                        if (ehMecanismoDeCiclo) {
+                            temposAtivacao.push(tempoRestante);
+
+                            temposCiclos = [];
+                            // Subtrai o 1º do 2º, o 2º do 3º, etc.
+                            for (let i = 0; i < temposAtivacao.length - 1; i++) {
+                                temposCiclos.push(temposAtivacao[i] - temposAtivacao[i + 1]);
+                            }
+                        }
+                    }
+                }
+
+                estadoAnteriorMecanismos[idMotor] = estaAtivoAgora;
+
+                if (estaAtivoAgora) {
+                    led.classList.remove('desligado');
+                    led.classList.add('ligado');
+                } else {
+                    led.classList.remove('ligado');
+                    led.classList.add('desligado');
+                }
+            }
+
+            function adicionarRodada(pontosAuto, pontosTele) {
+                let historico = JSON.parse(localStorage.getItem("historicoTreinos")) || [];
+                const agora = new Date();
+                const dataFormatada = agora.toLocaleDateString() + " " + agora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                const novaRodada = {
+                    data: dataFormatada,
+                    auto: pontosAuto,
+                    tele: pontosTele,
+                    total: parseInt(pontosAuto) + parseInt(pontosTele),
+                    graficoX: temposGrafico,   // Eixo do Tempo
+                    graficoY: pontosGrafico,   // Eixo dos Pontos
+                    ciclos: temposCiclos       // Tempo decorrido entre ações
+                };
+
+                historico.unshift(novaRodada);
+                localStorage.setItem("historicoTreinos", JSON.stringify(historico));
+                renderizarTabela();
+            }
+
+            function renderizarTabela() {
+                const corpo = document.getElementById("corpo-tabela");
+                if (!corpo) return;
+
+                let historico = JSON.parse(localStorage.getItem("historicoTreinos")) || [];
+                corpo.innerHTML = "";
+
+                if (historico.length === 0) {
+                    corpo.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Nenhum treino registrado.</td></tr>`;
+                    return;
+                }
+
+                historico.forEach((treino, index) => {
+                    corpo.innerHTML += `
+                <tr onclick="abrirDetalhes(${index})" class="linha-clicavel">
+                    <td>${treino.data}</td>
+                    <td style="color: #38bdf8;">${treino.auto} pts</td>
+                    <td style="color: #fbbf24;">${treino.tele} pts</td>
+                    <td style="font-weight: bold; color: #00FF66;">${treino.total} pts</td>
+                </tr>`;
+                });
+            }
+
+            function setTextoSeExiste(id, valor) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = valor;
+            }
+
+            function abrirDetalhes(index) {
+                let historico = JSON.parse(localStorage.getItem("historicoTreinos")) || [];
+                const treino = historico[index];
+                if (!treino) return;
+
+                const dialog = document.getElementById("dialog-detalhes");
+                if (!dialog) return;
+
+                dialog.dataset.index = index;
+                const numeroPartida = historico.length - index;
+
+                // Dados de Pontos
+                const xAuto = treino.auto || 0;
+                const xTele = treino.tele || 0;
+                const pontosEsperados = treino.esperados !== undefined ? treino.esperados : (xAuto + xTele);
+                const pontosFeitosTexto = (treino.feitos !== undefined && treino.feitos !== null && treino.feitos !== "") ? treino.feitos : "-";
+
+                // Renderização dos cards de texto padrão
+                setTextoSeExiste("modal-titulo", `Partida #${numeroPartida} - ${treino.data}`);
+                setTextoSeExiste("modal-esperados", pontosEsperados);
+                setTextoSeExiste("modal-feitos", pontosFeitosTexto);
+                setTextoSeExiste("modal-xauto", `${xAuto}p`);
+                setTextoSeExiste("modal-xtele", `${xTele}p`);
+                setTextoSeExiste("modal-rauto", treino.realAuto !== undefined ? `${treino.realAuto}p` : "-");
+                setTextoSeExiste("modal-rtele", treino.realTele !== undefined ? `${treino.realTele}p` : "-");
+
+                let taxaTexto = "-";
+                if (pontosFeitosTexto !== "-" && Number(pontosEsperados) > 0) {
+                    taxaTexto = `${Math.round((Number(treino.feitos) / Number(pontosEsperados)) * 100)}%`;
+                }
+                setTextoSeExiste("modal-conversao", taxaTexto);
+
+                let freqText = "-";
+                let cicloText = "-";
+
+                if (treino.ciclos && treino.ciclos.length > 0) {
+                    const minCiclo = Math.min(...treino.ciclos);
+                    const soma = treino.ciclos.reduce((a, b) => a + b, 0);
+                    const media = Math.round(soma / treino.ciclos.length);
+
+                    freqText = `${media}s`;
+                    cicloText = `${minCiclo}s`;
+                }
+                setTextoSeExiste("modal-freq", freqText);
+                setTextoSeExiste("modal-ciclo", cicloText);
+
+
+                const gDinamico = document.getElementById("grafico-dinamico");
+                if (gDinamico) {
+                    gDinamico.innerHTML = ""; // Limpa desenho anterior
+
+                    if (treino.graficoX && treino.graficoX.length > 0) {
+                        let pathD = "";
+                        let circlesHtml = "";
+
+                        // Base Y: se fez poucos pontos, o teto mínimo do gráfico é 10 para não distorcer
+                        const maxPontos = Math.max(treino.total || 1, 10);
+
+                        for (let i = 0; i < treino.graficoX.length; i++) {
+                            const tempo = treino.graficoX[i];
+                            const pontos = treino.graficoY[i];
+
+                            // X varia de 10px (150s) até 290px (0s)
+                            const xPx = 10 + ((150 - tempo) / 150) * 280;
+
+                            // Y varia de 105px (0pts base) até 25px (maxpts teto)
+                            const yPx = 105 - (pontos / maxPontos) * 80;
+
+                            if (i === 0) pathD += `M ${xPx} ${yPx} `;
+                            else pathD += `L ${xPx} ${yPx} `;
+
+                            circlesHtml += `<circle cx="${xPx}" cy="${yPx}" r="3" fill="#00FF66"/>`;
+                        }
+
+                        // Extensão da linha reta final (Mantém o último ponto até o tempo acabar)
+                        const lastPontos = treino.graficoY[treino.graficoY.length - 1];
+                        const xFim = 290; // (Representa o marco de 0 Segundos)
+                        const yFim = 105 - (lastPontos / maxPontos) * 80;
+                        pathD += `L ${xFim} ${yFim}`;
+
+                        gDinamico.innerHTML = `<path d="${pathD}" fill="none" stroke="#00FF66" stroke-width="2"/>` + circlesHtml;
+                    }
+                }
+
+                if (typeof dialog.showModal === "function") dialog.showModal();
+            }
+
+            function fecharDetalhes() {
+                const dialog = document.getElementById("dialog-detalhes");
+                if (dialog) {
+                    delete dialog.dataset.index;
+                    if (typeof dialog.close === "function") dialog.close();
+                }
+            }
+
+            function excluirPartida() {
+                const dialog = document.getElementById("dialog-detalhes");
+                if (!dialog || dialog.dataset.index === undefined) return;
+
+                const index = parseInt(dialog.dataset.index);
+                let historico = JSON.parse(localStorage.getItem("historicoTreinos")) || [];
+
+                if (index >= 0 && index < historico.length) {
+                    historico.splice(index, 1);
+                    localStorage.setItem("historicoTreinos", JSON.stringify(historico));
+
+                    fecharDetalhes();
+                    if (typeof renderizarTabela === "function") renderizarTabela();
+                }
+            }
+        </script>
+    </main>    
+</body>
+</html>

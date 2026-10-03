@@ -1,0 +1,451 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+/* Configuração Geral da Tela */
+html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* Impede a rolagem na página inteira */
+    font-family: sans-serif;
+}
+
+body {
+    background-color: #1E1E1E;
+    color: #FFFFFF;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
+    font-family: "Montserrat", sans-serif;
+
+    display: flex;
+    flex-direction: column;
+    padding: 20px; /* Garante 20px de respiro em cima, nas laterais e NO FUNDO */
+}
+
+
+/* Header (Logo + Título + Linha Verde) */
+header {
+    display: flex;
+    align-items: center;
+    position: relative;
+    justify-content: space-between;
+    border-bottom: 4px solid #00FF66;
+    padding-bottom: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: 30px;
+    flex-shrink: 0; /* Impede o header de esmagar o conteúdo */
+}
+
+.ImageHeader {
+    height: 80px;
+    margin-right: 15px;
+}
+
+.titulo {
+    font-size: 40px;
+    margin: 0;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.Timer {
+    font-size: 50px;
+    color: #00FF66; /* Verde Neon */
+    margin: 0;
+}
+
+
+/* Organização dos Blocos (Lado a Lado) */
+main {
+    display: flex;
+    gap: 20px;
+    flex: 1; /* Preenche a altura restante */
+    min-height: 0; /* Impede que os cartões estourem a tela para baixo */
+}
+
+.mapa-wrapper {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.Arena {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Impede a imagem da arena de esticar o card para fora da tela */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+#marcador-robo {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    background-color: #a6e9c1;
+    border-radius: 2px;
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    box-shadow: 0 0 10px #112c1c;
+}
+
+#marcador-robo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 1100px) {
+    /* Faz os cards ocuparem 100% da largura da tela e ficarem um embaixo do outro */
+    .Odometria_Arena, .Quadro_inf, .Quadro_Pont, .Quadro_Historico {
+        flex: 0 0 100%; 
+    }
+
+    /* Diminui um pouco o tamanho das fontes e da logo para caber melhor */
+    .titulo {
+        font-size: 30px;
+    }
+    
+    .ImageHeader {
+        height: 40px;
+    }
+}
+
+/* Customização dos Cards/Quadrados */
+.Odometria_Arena, .Quadro_inf, .Quadro_Pont, .Quadro_Historico {
+    background-color: #2A2A2A;
+    border: 1px solid #444444;
+    border-radius: 8px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* O bloco da Arena vai ocupar mais espaço (50% da tela) */
+.Odometria_Arena {
+    flex: 3; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.Odometria_Arena h2 {
+    border-bottom: 2px solid #00FF66;
+    padding-bottom: 10px;             
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 20px;
+    font-size: 30px;              
+}
+
+.Coluna_Meio {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; 
+}
+
+
+.Quadro_inf, .Quadro_Historico {
+    flex: 1;
+    min-height: 0;
+}
+.Quadro_Historico {
+    flex: 1; /* Ocupa o espaço restante */
+    overflow-y: auto; /* Cria barra de rolagem interna apenas aqui se necessário */
+}
+
+.Quadro_Historico h2 {
+    border-bottom: 2px solid #00FF66;
+    padding-bottom: 10px;            
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 20px;   
+    font-size: 30px;
+    margin-top: 0;
+}
+/* Transforma as linhas da tabela em botões ao passar o mouse */
+.linha-clicavel {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.linha-clicavel:hover {
+    background-color: #383838 !important;
+}
+
+/* Container nativo Dialog */
+dialog#dialog-detalhes {
+    background-color: #1E1E1E;
+    color: #ffffff;
+    border: none;
+    border-radius: 24px;
+    padding: 30px;
+    width: 90vw;
+    max-width: 880px;
+    margin: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    position: relative;
+}
+
+dialog#dialog-detalhes::backdrop {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+/* Botão de Fechar */
+.btn-fechar {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: transparent;
+    border: none;
+    color: #a0a0a0;
+    font-size: 32px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.btn-fechar:hover {
+    color: #00FF66;
+}
+
+/* Título */
+#modal-titulo {
+    text-align: center;
+    font-family: 'Georgia', serif;
+    font-size: 26px;
+    margin-bottom: 25px;
+    color: #ffffff;
+}
+.modal-rodape {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-excluir {
+    background-color: transparent;
+    color: #ff4d4d;
+    border: 2px solid #ff4d4d;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-excluir:hover {
+    background-color: #ff4d4d;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 77, 77, 0.5);
+}
+
+/* Layout em Grid (4 colunas) */
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+/* Cards Escuros Internos */
+.card-detalhe {
+    background-color: #2A2A2A;
+    border-radius: 16px;
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-label {
+    font-size: 15px;
+    font-family: 'Georgia', serif;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.card-valor {
+    font-size: 42px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Inputs de Pontos Editáveis */
+.card-input {
+    background: transparent;
+    border: 2px solid #00FF66;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 38px;
+    font-weight: bold;
+    text-align: center;
+    width: 80%;
+    outline: none;
+}
+
+.card-input:focus {
+    box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+}
+
+/* Tabela Cruzada (xPTS x Pontos) */
+.card-tabela-cruzada {
+    padding: 10px;
+}
+
+.tabela-cruzada-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+}
+
+.celula {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 6px;
+    color: #ffffff;
+}
+
+.celula-header {
+    font-size: 16px;
+    color: #ffffff;
+}
+
+/* Divisores internos em Neon */
+.border-r {
+    border-right: 2px solid #00FF66;
+}
+
+.border-b {
+    border-bottom: 2px solid #00FF66;
+}
+
+/* Card do Gráfico (Expandido em 2x2) */
+.card-grafico {
+    grid-column: span 2;
+    grid-row: span 2;
+    padding: 15px;
+}
+
+.grafico-svg {
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+}
+
+#tabela-historico {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    color: #f8fafc;
+}
+
+#tabela-historico th {
+    background-color: #282424;
+    color: #00FF66; /* Verde neon para destacar os títulos */
+    padding: 10px;
+    text-align: left;
+    border-bottom: 2px solid #222020;
+}
+
+#tabela-historico td {
+    padding: 10px;
+    border-bottom: 1px solid #222020;
+    font-size: 14px;
+}
+#tabela-pontos tbody tr:nth-child(even) {
+    background-color: #181818;
+}
+
+.Quadro_inf h2 {
+    border-bottom: 2px solid #00FF66;
+    padding-bottom: 10px;             
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 20px;   
+    font-size: 30px;
+}
+
+/* Configuração base da bolinha de LED */
+.led-status {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* Quando o motor estiver desligado/sem sinal (Vermelho ou Cinza) */
+.desligado {
+    background-color: #6e6e6e;
+    box-shadow: inset 0 0 5px #000;
+}
+
+/* Quando o motor estiver ligado (Verde Neon) */
+.ligado {
+    background-color: #00FF66;
+    box-shadow: 0 0 10px #00FF66, inset 0 0 5px #fff;
+}
+
+.Quadro_Pont {
+    flex: 1.5;
+}
+
+.Quadro_Pont h1 {
+    padding-bottom: 10px;             
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 20px;
+    font-size: 30px;   
+}
+
+h3 {
+    font-size: 20px;
+    color: #DDDDDD;
+    margin: 10px 0;
+    font-weight: normal;
+}
+
+/* Divisões internas do Quadro de Pontuação */
+.Quadro_de_Pontos {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.Quadro_de_Pontos h2 {
+    border-top: 2px solid #00FF66;
+    padding-top: 10px;             
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 20px;   
+    font-size: 22px;
+}
+
+.Quadro_de_Pontos h1 {
+    padding-bottom: 10px;             
+    width: 100%;                      
+    text-align: center;               
+    margin-bottom: 10px;
+    font-size: 30px;   
+}
+
+/* Linha verde interna menor para os pontos */
+.Quadro_inf .linhaVerde {
+    position: relative;
+    margin: 15px 0;
+}
