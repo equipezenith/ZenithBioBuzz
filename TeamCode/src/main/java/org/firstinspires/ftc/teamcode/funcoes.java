@@ -24,6 +24,8 @@ funcoes extends chassi  {
 
     DcMotorEx motor_in;
 
+    DcMotorEx motor_tra;
+
     public boolean in_state = false;
 
     DcMotorEx motor_sho;
@@ -33,8 +35,9 @@ funcoes extends chassi  {
         super(hardwareMap);
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
         motor_sho.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motor_in =  hardwareMap.get(DcMotorEx.class, "motorIn");
-        motor_in.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_tra =  hardwareMap.get(DcMotorEx.class, "motorTra");
+        motor_tra.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor_in = hardwareMap.get(DcMotorEx.class, "motorIn");
         indexer = hardwareMap.get(Servo.class, "indexer");
         indexer.setPosition(0.0);
         vision.init(hardwareMap);
@@ -67,26 +70,19 @@ funcoes extends chassi  {
     }
 
     public void shooter(Telemetry telemetry){
-        double ticks_per_second = (2400/60.0) * 28;
-        boolean velocidade_MAX = false;
-            if (velocidade_MAX && motor_sho.getVelocity() < ticks_per_second * 0.90){
-                motor_sho.setPower(1);
-            }
-            else {
-                if (motor_sho.getVelocity() + 40 >= ticks_per_second) {
-                    motor_sho.setVelocity(1 * ticks_per_second);
-                    if (motor_sho.getVelocity() >= ticks_per_second * 0.97) {
-                        velocidade_MAX = true;
-                    }
-                } else {
-                    motor_sho.setPower(1);
-                }
-            }
-            telemetry.addData("Velocidade Atual", motor_sho.getVelocity());
-            telemetry.addData("Velocidade Alvo", ticks_per_second);
-            telemetry.addData("Shooter Pronto", velocidade_MAX);
-            telemetry.update();
-            motor_in.setPower(0.4);
+        double kS = 0.072, kV = 0.000166, kP = 0.000002;
+        double goalRPM = 2450;
+
+        double feedForward = (kV * goalRPM) + kS;
+        double error = goalRPM - (motor_sho.getVelocity() * 60) / 28;
+        double feedBack = error * kP;
+        power = feedBack + feedForward;
+        motor_sho.setPower(power);
+        telemetry.addData("error", error );
+        telemetry.addData("RPM Atual", (motor_sho.getVelocity() * 60) / 28);
+
+        motor_tra.setPower(0.4);
+        motor_in.setPower(1);
 
     }
 
