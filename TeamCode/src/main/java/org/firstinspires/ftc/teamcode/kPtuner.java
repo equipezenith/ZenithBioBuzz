@@ -11,7 +11,7 @@ public class kPtuner extends OpMode {
     public double kV = 0.000166;
 
     public double kS = 0.072;
-    public double kP = 0.02;
+    public double kP = 0.00002;
 
     public double goalRPM = 2400;
     double[] increments = {0.000001, 0.00001, 0.0001, 0.001, 0.01};
@@ -34,17 +34,22 @@ public class kPtuner extends OpMode {
         double currentStep = increments[incrementIdx];
 
         // Altera o kP
-        if (gamepad1.dpadUpWasPressed()) { kP += currentStep; }
-        if (gamepad1.dpadDownWasPressed()) { kP -= currentStep; }
+        if (gamepad1.dpadUpWasPressed()) {
+            kP += currentStep;
+        }
+        if (gamepad1.dpadDownWasPressed()) {
+            kP -= currentStep;
+        }
 
         double feedForward = (kV * goalRPM) + kS;
         double error = goalRPM - (robo.motor_sho.getVelocity() * 60) / 28;
         double feedBack = error * kP;
         robo.motor_sho.setPower(feedForward + feedBack);
+        robo.motor_tra.setPower(0.4);
 
         telemetry.addData("Step Atual", "%.6f", currentStep);
         telemetry.addData("kP", "%.6f", kP);
-        telemetry.addData("error", error );
+        telemetry.addData("error", error);
         telemetry.addData("RPM Atual", (robo.motor_sho.getVelocity() * 60) / 28);
         telemetry.update();
     }

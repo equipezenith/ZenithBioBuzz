@@ -70,7 +70,7 @@ funcoes extends chassi  {
     }
 
     public void shooter(Telemetry telemetry){
-        double kS = 0.072, kV = 0.000166, kP = 0.000002;
+        double kS = 0.072, kV = 0.000166, kP = 0.000001;
         double goalRPM = 2450;
 
         double feedForward = (kV * goalRPM) + kS;
