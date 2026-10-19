@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.vision.VisionPortal;
 
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -16,6 +17,9 @@ public class chassi {
     DcMotorEx motor_t_e; // motor traseiro esquerdo
     DcMotorEx xencoder;
     DcMotorEx yencoder;
+    public Sistema_visao vision_tag = new Sistema_visao();
+
+    int[] viewIds = VisionPortal.makeMultiPortalView(2, VisionPortal.MultiPortalLayout.VERTICAL);
 
     static double TICKS_PER_REV = 423.4;
 
@@ -57,6 +61,7 @@ public class chassi {
         imu = hardwareMap.get(IMU.class, "imu");
         xencoder = hardwareMap.get(DcMotorEx.class, "motordd");
         yencoder = hardwareMap.get(DcMotorEx.class, "motorde");
+        vision_tag.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.APRILTAG, viewIds[1]);
 
 
         motor_d_d.setMode(DcMotor.RunMode.RUN_USING_ENCODER);

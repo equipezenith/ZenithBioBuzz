@@ -8,12 +8,12 @@ public class kPtuner extends OpMode {
     // Declarar o objeto sem o instanciar imediatamente
     private funcoes robo;
 
-    public double kV = 0.000166;
+    public double kV = 0.000227;
 
-    public double kS = 0.072;
-    public double kP = 0.00002;
+    public double kS = 0.262;
+    public double kP = 0.00514;
 
-    public double goalRPM = 2400;
+    public double goalRPM = 1650;
     double[] increments = {0.000001, 0.00001, 0.0001, 0.001, 0.01};
     int incrementIdx = 2;
 

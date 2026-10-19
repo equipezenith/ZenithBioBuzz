@@ -8,7 +8,7 @@ public class Kstuner extends OpMode {
     // Declarar o objeto sem o instanciar imediatamente
     private funcoes robo;
 
-    public double kS = 0.072;
+    public double kS = 0.262;
     double[] increments = {0.000001, 0.00001, 0.0001, 0.001, 0.01};
     int incrementIdx = 4;
 

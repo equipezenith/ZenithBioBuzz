@@ -15,6 +15,6 @@ public class Shooter_test extends OpMode {
 
     @Override
     public void loop() {
-        robo.shooter(telemetry);
+        robo.shooterOP(telemetry);
     }
 }

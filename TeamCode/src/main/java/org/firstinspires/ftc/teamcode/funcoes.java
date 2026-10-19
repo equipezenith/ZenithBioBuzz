@@ -3,6 +3,7 @@ import static java.lang.Thread.sleep;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -20,7 +21,7 @@ funcoes extends chassi  {
     int atag2;
     private VisionPortal visionPortal;
     private AprilTagProcessor tagProcessor;
-    public Sistema_visao vision = new Sistema_visao();
+    public Sistema_visao vision_cor = new Sistema_visao();
 
     DcMotorEx motor_in;
 
@@ -34,13 +35,14 @@ funcoes extends chassi  {
     public funcoes (HardwareMap hardwareMap, Telemetry telemetry) {
         super(hardwareMap);
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
-        motor_sho.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor_sho.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motor_sho.setDirection(DcMotorSimple.Direction.REVERSE);
+
         motor_tra =  hardwareMap.get(DcMotorEx.class, "motorTra");
-        motor_tra.setDirection(DcMotorSimple.Direction.REVERSE);
         motor_in = hardwareMap.get(DcMotorEx.class, "motorIn");
         indexer = hardwareMap.get(Servo.class, "indexer");
         indexer.setPosition(0.0);
-        vision.init(hardwareMap);
+        vision_cor.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.COLOR, viewIds[0]);
 
         //Setup da camera para sensor de cor
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -69,27 +71,35 @@ funcoes extends chassi  {
         }
     }
 
-    public void shooter(Telemetry telemetry){
-        double kS = 0.072, kV = 0.000166, kP = 0.000001;
-        double goalRPM = 2450;
-
+    public void shooterOP(Telemetry telemetry){
+        double kS = 0.262, kV = 0.000227, kP = 0.0052;
+        double goalRPM = 1700;
+        double goalTicks = (goalRPM * 28) / 60;
+        boolean goalReached = false;
         double feedForward = (kV * goalRPM) + kS;
         double error = goalRPM - (motor_sho.getVelocity() * 60) / 28;
         double feedBack = error * kP;
         power = feedBack + feedForward;
         motor_sho.setPower(power);
+        if (goalTicks - 9.5 >= motor_sho.getVelocity()){
+            goalReached = true;
+        }
+        if (motor_sho.getVelocity() >= goalTicks - 9.5 || (goalReached && motor_sho.getVelocity() >= goalTicks - 50)) {
+            motor_tra.setPower(1);
+        } else {
+            motor_tra.setPower(0);
+        }
+
         telemetry.addData("error", error );
         telemetry.addData("RPM Atual", (motor_sho.getVelocity() * 60) / 28);
-
-        motor_tra.setPower(0.4);
-        motor_in.setPower(1);
+        telemetry.addData("Shooter pronto?:", goalReached);
 
     }
 
 
     public void atualizarServoPorCor() {
         // Usa Sistema_visao.DetectedColor para garantir que o tipo seja reconhecido
-        Sistema_visao.DetectedColor cor = vision.getDetectedColor();
+        Sistema_visao.DetectedColor cor = vision_cor.getDetectedColor();
 
         // Se for AZUL ou VERMELHO -> Posição 1.0. Caso contrário (Amarelo ou Nada) -> Posição 0.0
         if (cor == Sistema_visao.DetectedColor.BLUE || cor == Sistema_visao.DetectedColor.RED) {
@@ -97,19 +107,17 @@ funcoes extends chassi  {
         } else {
             indexer.setPosition(0.0);
         }
+
     }
     // Função de encerramento
     public void stop() {
-        vision.close();
+        vision_cor.close();
     }
 
     public void sho_auto() throws InterruptedException {
         motor_sho.setPower(1);
-        sleep(1500);
-        motor_in.setPower(1);
-        sleep(3000);
-        motor_in.setPower(0);
-        motor_sho.setPower(0);
+        sleep(1000);
+        motor_tra.setPower(0.4);
     }
 }
 

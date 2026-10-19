@@ -21,8 +21,8 @@ public class TesteDashboardOpMode extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         // 4. Transmite o vídeo da webcam ao vivo no Dashboard (30 FPS)
-        if (robot.vision.getVisionPortal() != null) {
-            FtcDashboard.getInstance().startCameraStream(robot.vision.getVisionPortal(), 30);
+        if (robot.vision_cor.getVisionPortal() != null) {
+            FtcDashboard.getInstance().startCameraStream(robot.vision_cor.getVisionPortal(), 30);
         }
 
         waitForStart();
@@ -34,9 +34,9 @@ public class TesteDashboardOpMode extends LinearOpMode {
 
             // Telemetria detalhada para diagnóstico
             telemetry.addData("--- STATUS ---", "");
-            telemetry.addData("Cor Detectada", robot.vision.getDetectedColor());
-            telemetry.addData("Pixels Vermelhos", robot.vision.getRedPixels());
-            telemetry.addData("Pixels Azuis", robot.vision.getBluePixels());
+            telemetry.addData("Cor Detectada", robot.vision_cor.getDetectedColor());
+            telemetry.addData("Pixels Vermelhos", robot.vision_cor.getRedPixels());
+            telemetry.addData("Pixels Azuis", robot.vision_cor.getBluePixels());
             telemetry.addData("Posicao do Servo", robot.indexer.getPosition());
             telemetry.update();
         }
