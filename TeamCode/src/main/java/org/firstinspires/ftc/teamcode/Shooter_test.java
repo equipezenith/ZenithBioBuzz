@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-@TeleOp(name = "OpPrototipos")
+@TeleOp(name = "Shooter")
 public class Shooter_test extends OpMode {
 
     funcoes robo;
@@ -15,6 +15,6 @@ public class Shooter_test extends OpMode {
 
     @Override
     public void loop() {
-        robo.shooterOP(telemetry);
+        robo.shooterOPNectar(telemetry);
     }
 }

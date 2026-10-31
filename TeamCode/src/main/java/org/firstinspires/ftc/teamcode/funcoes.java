@@ -36,9 +36,9 @@ funcoes extends chassi  {
         super(hardwareMap);
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
         motor_sho.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motor_sho.setDirection(DcMotorSimple.Direction.REVERSE);
 
         motor_tra =  hardwareMap.get(DcMotorEx.class, "motorTra");
+        motor_tra.setDirection(DcMotorSimple.Direction.REVERSE);
         motor_in = hardwareMap.get(DcMotorEx.class, "motorIn");
         indexer = hardwareMap.get(Servo.class, "indexer");
         indexer.setPosition(0.0);
@@ -71,7 +71,7 @@ funcoes extends chassi  {
         }
     }
 
-    public void shooterOP(Telemetry telemetry){
+    public void shooterOPPolem(Telemetry telemetry){
         double kS = 0.262, kV = 0.000227, kP = 0.0052;
         double goalRPM = 1700;
         double goalTicks = (goalRPM * 28) / 60;
@@ -85,6 +85,32 @@ funcoes extends chassi  {
             goalReached = true;
         }
         if (motor_sho.getVelocity() >= goalTicks - 9.5 || (goalReached && motor_sho.getVelocity() >= goalTicks - 50)) {
+            motor_tra.setPower(1);
+        } else {
+            motor_tra.setPower(0);
+        }
+
+        telemetry.addData("error", error );
+        telemetry.addData("RPM Atual", (motor_sho.getVelocity() * 60) / 28);
+        telemetry.addData("Shooter pronto?:", goalReached);
+
+    }
+
+    public void shooterOPNectar(Telemetry telemetry){
+        double kS = 0.302, kV = 0.000171,kP = 0.006;
+        double goalRPM = 1928;
+        double goalTicks = (goalRPM * 28) / 60;
+        double RPMatual = (motor_sho.getVelocity() * 60) / 28;
+        boolean goalReached = false;
+        double feedForward = (kV * goalRPM) + kS;
+        double error = goalRPM - (motor_sho.getVelocity() * 60) / 28;
+        double feedBack = error * kP;
+        power = feedBack + feedForward;
+        motor_sho.setPower(power);
+        if (RPMatual >= goalRPM){
+            goalReached = true;
+        }
+        if (motor_sho.getVelocity() >= goalTicks) {
             motor_tra.setPower(1);
         } else {
             motor_tra.setPower(0);

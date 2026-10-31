@@ -8,12 +8,13 @@ public class kPtuner extends OpMode {
     // Declarar o objeto sem o instanciar imediatamente
     private funcoes robo;
 
-    public double kV = 0.000227;
+    public double kV = 0.000165;
 
-    public double kS = 0.262;
-    public double kP = 0.00514;
+    public double kS = 0.302;
+    public double kP = 0.11514;
 
-    public double goalRPM = 1650;
+
+    public double goalRPM = 2000;
     double[] increments = {0.000001, 0.00001, 0.0001, 0.001, 0.01};
     int incrementIdx = 2;
 
@@ -45,7 +46,7 @@ public class kPtuner extends OpMode {
         double error = goalRPM - (robo.motor_sho.getVelocity() * 60) / 28;
         double feedBack = error * kP;
         robo.motor_sho.setPower(feedForward + feedBack);
-        robo.motor_tra.setPower(0.4);
+        robo.motor_tra.setPower(1);
 
         telemetry.addData("Step Atual", "%.6f", currentStep);
         telemetry.addData("kP", "%.6f", kP);
