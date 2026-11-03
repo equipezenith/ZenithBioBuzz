@@ -30,14 +30,14 @@ public class TesteDashboardOpMode extends LinearOpMode {
         while (opModeIsActive()) {
 
             // Atualiza o estado do servo baseado na cor
-            robot.atualizarServoPorCor();
+            robot.atualizarServoPorCor(gamepad1.left_trigger >= 0.5);
 
             // Telemetria detalhada para diagnóstico
             telemetry.addData("--- STATUS ---", "");
             telemetry.addData("Cor Detectada", robot.vision_cor.getDetectedColor());
             telemetry.addData("Pixels Vermelhos", robot.vision_cor.getRedPixels());
             telemetry.addData("Pixels Azuis", robot.vision_cor.getBluePixels());
-            telemetry.addData("Posicao do Servo", robot.indexer.getPosition());
+            telemetry.addData("Posicao do Servo", robot.indexerN.getPosition());
             telemetry.update();
         }
 

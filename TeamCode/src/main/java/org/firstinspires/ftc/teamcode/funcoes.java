@@ -13,9 +13,20 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class
 funcoes extends chassi  {
+
+    // Variável global (pode ser setada de qualquer classe: Robo.novoCiclo = true;)
+    public static volatile boolean novoCiclo = true;   // true = pode ativar na primeira vez
+
+    // Campos da classe
+    private enum Estado { ARMADO, SEGURANDO, TRAVADO }
+    private Estado estado = Estado.ARMADO;
+    private final ElapsedTime holdTimer = new ElapsedTime();
+    private static final double TEMPO_MINIMO_SEG = 1.0;
+
     int atag0;
     int atag1;
     int atag2;
@@ -30,7 +41,9 @@ funcoes extends chassi  {
     public boolean in_state = false;
 
     DcMotorEx motor_sho;
-    Servo indexer;
+    Servo indexerN;
+
+    Servo indexerP;
 
     public funcoes (HardwareMap hardwareMap, Telemetry telemetry) {
         super(hardwareMap);
@@ -40,8 +53,10 @@ funcoes extends chassi  {
         motor_tra =  hardwareMap.get(DcMotorEx.class, "motorTra");
         motor_tra.setDirection(DcMotorSimple.Direction.REVERSE);
         motor_in = hardwareMap.get(DcMotorEx.class, "motorIn");
-        indexer = hardwareMap.get(Servo.class, "indexer");
-        indexer.setPosition(0.0);
+        indexerP = hardwareMap.get(Servo.class, "indexerP");
+        indexerP.setPosition(0.0);
+        indexerN = hardwareMap.get(Servo.class, "indexerN");
+        indexerN.setPosition(0.0);
         vision_cor.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.COLOR, viewIds[0]);
 
         //Setup da camera para sensor de cor
@@ -123,18 +138,39 @@ funcoes extends chassi  {
     }
 
 
-    public void atualizarServoPorCor() {
-        // Usa Sistema_visao.DetectedColor para garantir que o tipo seja reconhecido
+
+    public void atualizarServoPorCor(boolean ativo) {
+        Servo servoAtivo = null;
         Sistema_visao.DetectedColor cor = vision_cor.getDetectedColor();
+        boolean nectarDetectado = (cor == Sistema_visao.DetectedColor.BLUE
+                || cor == Sistema_visao.DetectedColor.RED);
+        boolean polenDetectado = (cor == Sistema_visao.DetectedColor.YELLOW);
 
-        // Se for AZUL ou VERMELHO -> Posição 1.0. Caso contrário (Amarelo ou Nada) -> Posição 0.0
-        if (cor == Sistema_visao.DetectedColor.BLUE || cor == Sistema_visao.DetectedColor.RED) {
-            indexer.setPosition(1.0);
-        } else {
-            indexer.setPosition(0.0);
+        switch (estado) {
+            case ARMADO:
+                if (ativo && novoCiclo && (nectarDetectado || polenDetectado)) {
+                    novoCiclo = false;
+                    servoAtivo = nectarDetectado ? indexerN : indexerP;
+                    servoAtivo.setPosition(1.0);
+                    holdTimer.reset();
+                    estado = Estado.SEGURANDO;
+                }
+                break;
+
+            case SEGURANDO:
+                if (holdTimer.seconds() >= TEMPO_MINIMO_SEG) {
+                    servoAtivo.setPosition(0.0);
+                    servoAtivo = null;
+                    estado = Estado.TRAVADO;
+                }
+                break;
+
+            case TRAVADO:
+                if (novoCiclo) estado = Estado.ARMADO;
+                break;
         }
-
     }
+
     // Função de encerramento
     public void stop() {
         vision_cor.close();
