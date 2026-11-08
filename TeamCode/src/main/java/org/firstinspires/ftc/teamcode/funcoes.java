@@ -3,6 +3,7 @@ import static java.lang.Thread.sleep;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -19,7 +20,7 @@ public class
 funcoes extends chassi  {
 
     // Variável global (pode ser setada de qualquer classe: Robo.novoCiclo = true;)
-    public static volatile boolean novoCiclo = true;   // true = pode ativar na primeira vez
+    boolean novoCiclo = true;   // true = pode ativar na primeira vez
 
     // Campos da classe
     private enum Estado { ARMADO, SEGURANDO, TRAVADO }
@@ -46,7 +47,7 @@ funcoes extends chassi  {
     Servo indexerP;
 
     public funcoes (HardwareMap hardwareMap, Telemetry telemetry) {
-        super(hardwareMap);
+        super(hardwareMap, new Pose(9 ,9 , Math.toRadians(90)));
         motor_sho =  hardwareMap.get(DcMotorEx.class, "motorSho");
         motor_sho.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -57,7 +58,7 @@ funcoes extends chassi  {
         indexerP.setPosition(0.0);
         indexerN = hardwareMap.get(Servo.class, "indexerN");
         indexerN.setPosition(0.0);
-        vision_cor.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.COLOR, viewIds[0]);
+        vision_cor.init(hardwareMap, "CAMERA_COR", Sistema_visao.Mode.COLOR, viewIds[0]);
 
         //Setup da camera para sensor de cor
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -88,14 +89,18 @@ funcoes extends chassi  {
 
     public void shooterOPPolem(Telemetry telemetry){
         double kS = 0.262, kV = 0.000227, kP = 0.0052;
+        indexerN.setPosition(0);
+        indexerP.setPosition(0);
         double goalRPM = 1700;
         double goalTicks = (goalRPM * 28) / 60;
         boolean goalReached = false;
         double feedForward = (kV * goalRPM) + kS;
         double error = goalRPM - (motor_sho.getVelocity() * 60) / 28;
         double feedBack = error * kP;
-        power = feedBack + feedForward;
-        motor_sho.setPower(power);
+        double powerP = feedBack + feedForward;
+        novoCiclo = true;
+
+        motor_sho.setPower(powerP);
         if (goalTicks - 9.5 >= motor_sho.getVelocity()){
             goalReached = true;
         }
@@ -112,6 +117,8 @@ funcoes extends chassi  {
     }
 
     public void shooterOPNectar(Telemetry telemetry){
+        indexerN.setPosition(0);
+        indexerP.setPosition(0);
         double kS = 0.302, kV = 0.000171,kP = 0.006;
         double goalRPM = 1928;
         double goalTicks = (goalRPM * 28) / 60;
@@ -120,8 +127,9 @@ funcoes extends chassi  {
         double feedForward = (kV * goalRPM) + kS;
         double error = goalRPM - (motor_sho.getVelocity() * 60) / 28;
         double feedBack = error * kP;
-        power = feedBack + feedForward;
-        motor_sho.setPower(power);
+        double powerN = feedBack + feedForward;
+        novoCiclo = true;
+        motor_sho.setPower(powerN);
         if (RPMatual >= goalRPM){
             goalReached = true;
         }

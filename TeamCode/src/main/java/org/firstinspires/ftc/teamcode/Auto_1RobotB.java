@@ -12,6 +12,7 @@ public class Auto_1RobotB extends LinearOpMode {
     @Override
     public void runOpMode() {
         robo = new funcoes(hardwareMap, telemetry);
+        
 
     }
 }
