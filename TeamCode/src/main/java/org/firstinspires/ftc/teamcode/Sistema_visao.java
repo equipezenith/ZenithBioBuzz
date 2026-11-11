@@ -27,32 +27,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Cada instância controla UMA câmera, com UM VisionPortal.
- *   - Mode.COLOR    -> câmera do indexer (detecção de cor)
- *   - Mode.APRILTAG -> câmera que olha a tag
- * Use duas instâncias no TeleOp, uma para cada câmera.
- */
-@Config // Permite alterar variáveis pelo Dashboard
+@Config
 public class Sistema_visao {
 
     public enum DetectedColor { RED, BLUE, YELLOW, NONE }
 
     public enum Mode { COLOR, APRILTAG }
 
-    // ===== Ajustáveis pelo Dashboard (câmera da AprilTag) =====
-    // Biblioteca própria com as tags do jogo, para TODAS terem pose (range/bearing/yaw)
+    // ===== Ajustáveis pelo Dashboard (Câmera AprilTag) =====
     public static boolean USE_CUSTOM_TAG_LIBRARY = true;
     public static int TAG_ID_MIN = 30;
     public static int TAG_ID_MAX = 45;
-    public static double TAG_SIZE_INCHES = 6.5;   // MEÇA: lado do quadrado PRETO da tag, em polegadas
+    public static double TAG_SIZE_INCHES = 6.5;
 
-    // Resolução da câmera da tag: mais pixels = enxerga mais tags e de mais longe (custa CPU/USB)
     public static int TAG_CAM_WIDTH = 640;
     public static int TAG_CAM_HEIGHT = 480;
-    public static int TAG_DECIMATION = 2;         // 1 = mais alcance/precisão, 3 = mais FPS
+    public static int TAG_DECIMATION = 2;
 
-    // Exposição baixa + ganho alto = loop mais rápido e menos borrão (ajuste para a sua sala/webcam)
     public static int EXPOSURE_MS = 6;
     public static int GAIN = 250;
 
@@ -61,19 +52,13 @@ public class Sistema_visao {
     private VisionPortal visionPortal;
     private Mode mode;
 
-    // Métodos para ver a contagem de pixels na telemetria
     public int getRedPixels() { return colorProcessor != null ? colorProcessor.redPixels : 0; }
     public int getBluePixels() { return colorProcessor != null ? colorProcessor.bluePixels : 0; }
+    public int getYellowPixels() { return colorProcessor != null ? colorProcessor.yellowPixels : 0; }
 
-    /**
-     * @param cameraName nome da webcam na configuração do robô (ex.: "Webcam 1")
-     * @param mode       COLOR ou APRILTAG
-     * @param viewId     id da área de live view (veja makeMultiPortalView no TeleOp)
-     */
     public void init(HardwareMap hardwareMap, String cameraName, Mode mode, int viewId) {
         this.mode = mode;
 
-        // O ROI da cor foi feito para 640x480; a câmera da tag usa a resolução configurável
         Size resolution = (mode == Mode.COLOR)
                 ? new Size(640, 480)
                 : new Size(TAG_CAM_WIDTH, TAG_CAM_HEIGHT);
@@ -111,10 +96,6 @@ public class Sistema_visao {
 
     public Mode getMode() { return mode; }
 
-    /**
-     * Exposição manual baixa + ganho alto (dica do vídeo). Chame no INIT do OpMode,
-     * depois do init(). Espera a câmera começar a transmitir (até ~3 s).
-     */
     public void setManualExposure() {
         if (visionPortal == null) return;
         try {
@@ -148,17 +129,11 @@ public class Sistema_visao {
         return DetectedColor.NONE;
     }
 
-    /** Lista de tags detectadas (só funciona em Mode.APRILTAG). */
     public List<AprilTagDetection> getDetections() {
         if (aprilTagProcessor == null) return new ArrayList<>();
         return aprilTagProcessor.getDetections();
     }
 
-    /**
-     * Detecção de uma tag específica (ex.: 36) ou null se ela não está sendo vista agora.
-     * No SDK 12+, 'id' e 'metadata' ficam em AprilTagSingleDetection, não na classe base.
-     * A pose (ftcPose.range/bearing/yaw) continua disponível normalmente.
-     */
     public AprilTagSingleDetection getDetectionById(int id) {
         for (AprilTagDetection d : getDetections()) {
             if (d instanceof AprilTagSingleDetection) {
@@ -169,7 +144,6 @@ public class Sistema_visao {
         return null;
     }
 
-    /** IDs de todas as tags (individuais) vistas neste momento (útil para telemetria). */
     public List<Integer> getDetectedIds() {
         List<Integer> ids = new ArrayList<>();
         for (AprilTagDetection d : getDetections()) {
@@ -180,7 +154,6 @@ public class Sistema_visao {
         return ids;
     }
 
-    // Permite que o FtcDashboard acesse o fluxo de vídeo da câmera
     public VisionPortal getVisionPortal() {
         return visionPortal;
     }
@@ -191,28 +164,31 @@ public class Sistema_visao {
         }
     }
 
-    // ================= Seu processador de cor (sem alterações) =================
+    // ================= Processador de Cor =================
     static class ColorDetectorProcessor implements VisionProcessor {
 
         private DetectedColor detectedColor = DetectedColor.NONE;
         private Rect roi = new Rect(280, 200, 80, 80);
 
-        // Limite mínimo de pixels para considerar uma cor válida
         public static int minThreshold = 1000;
 
-        // Pixels contados (para debugging)
         public int redPixels = 0;
         public int bluePixels = 0;
         public int yellowPixels = 0;
 
-        // Limites HSV
+        // Declaracao dos limites HSV
+        private Scalar lowerYellow = new Scalar(15, 100, 100);
+        private Scalar upperYellow = new Scalar(30, 255, 255);
+
         private Scalar lowerBlue = new Scalar(100, 100, 100);
         private Scalar upperBlue = new Scalar(130, 255, 255);
+
         private Scalar lowerRed1 = new Scalar(0, 100, 100);
         private Scalar upperRed1 = new Scalar(10, 255, 255);
         private Scalar lowerRed2 = new Scalar(160, 100, 100);
         private Scalar upperRed2 = new Scalar(180, 255, 255);
 
+        // Declaracao das matrizes de imagem
         private Mat hsvMat = new Mat();
         private Mat maskYellow = new Mat();
         private Mat maskBlue = new Mat();
@@ -226,20 +202,27 @@ public class Sistema_visao {
         @Override
         public Object processFrame(Mat frame, long captureTimeNanos) {
             Imgproc.cvtColor(frame, hsvMat, Imgproc.COLOR_RGB2HSV);
+
+            // Declaracao do submat (corte da regiao de interesse)
             Mat submat = hsvMat.submat(roi);
 
+            // Mascaras de cor
+            Core.inRange(submat, lowerYellow, upperYellow, maskYellow);
             Core.inRange(submat, lowerBlue, upperBlue, maskBlue);
             Core.inRange(submat, lowerRed1, upperRed1, maskRed1);
             Core.inRange(submat, lowerRed2, upperRed2, maskRed2);
             Core.add(maskRed1, maskRed2, maskRed);
 
+            yellowPixels = Core.countNonZero(maskYellow);
             bluePixels = Core.countNonZero(maskBlue);
             redPixels = Core.countNonZero(maskRed);
 
-            if (redPixels > minThreshold && redPixels > bluePixels) {
+            if (redPixels > minThreshold && redPixels > bluePixels && redPixels > yellowPixels) {
                 detectedColor = DetectedColor.RED;
-            } else if (bluePixels > minThreshold && bluePixels > redPixels) {
+            } else if (bluePixels > minThreshold && bluePixels > redPixels && bluePixels > yellowPixels) {
                 detectedColor = DetectedColor.BLUE;
+            } else if (yellowPixels > minThreshold && yellowPixels > redPixels && yellowPixels > bluePixels) {
+                detectedColor = DetectedColor.YELLOW;
             } else {
                 detectedColor = DetectedColor.NONE;
             }

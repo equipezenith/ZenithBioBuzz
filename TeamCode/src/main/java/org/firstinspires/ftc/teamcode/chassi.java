@@ -21,7 +21,7 @@ public class chassi {
     int[] viewIds = VisionPortal.makeMultiPortalView(2, VisionPortal.MultiPortalLayout.VERTICAL);
 
     public chassi(HardwareMap hardwareMap, Pose poseInicial) {
-        vision_tag.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.APRILTAG, viewIds[1]);
+        //vision_tag.init(hardwareMap, "CAMERA_TAG", Sistema_visao.Mode.APRILTAG, viewIds[1]);
 
         follower = Constants.create(hardwareMap);
         follower.setPose(poseInicial);

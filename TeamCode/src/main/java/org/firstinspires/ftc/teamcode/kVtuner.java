@@ -37,11 +37,11 @@ public class kVtuner extends OpMode {
         if (gamepad1.dpadDownWasPressed()) { kV -= currentStep; }
 
         double power = (kV * goalRPM) + kS;
-        robo.motor_sho.setPower(power);
+        robo.motor_shoP.setPower(power);
 
         telemetry.addData("Step Atual", "%.6f", currentStep);
         telemetry.addData("kV", "%.6f", kV);
-        telemetry.addData("RPM Atual", (robo.motor_sho.getVelocity() * 60) / 28);
+        telemetry.addData("RPM Atual", (robo.motor_shoP.getVelocity() * 60) / 28);
         telemetry.update();
     }
 }

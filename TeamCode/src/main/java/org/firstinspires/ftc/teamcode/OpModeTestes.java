@@ -18,12 +18,15 @@ public class OpModeTestes extends OpMode {
         robo.andar(gamepad1);
         robo.alinharHive(gamepad1.a);
         robo.atualizarServoPorCor(robo.novoCiclo);
-        if (gamepad2.left_trigger >= 0) {
-            robo.shooterOPPolem(telemetry);
+        if (gamepad2.left_trigger >= 0.5) {
+            //robo.shooterOPPolem(telemetry);
             robo.shooterOPNectar(telemetry);
+        } else {
+            robo.motor_shoN.setPower(0);
+            robo.motor_shoP.setPower(0);
+            robo.motor_tra.setPower(0);
         }
-        if (gamepad2.right_bumper) {
-            robo.intake_Off(gamepad2 ,telemetry);
-        }
+        robo.intake_Off(gamepad2 ,telemetry);
+
     }
 }

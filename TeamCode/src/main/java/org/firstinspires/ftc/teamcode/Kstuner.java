@@ -32,11 +32,11 @@ public class Kstuner extends OpMode {
         if (gamepad1.dpadUpWasPressed()) { kS += currentStep; }
         if (gamepad1.dpadDownWasPressed()) { kS -= currentStep; }
 
-        robo.motor_sho.setPower(kS);
+        robo.motor_shoP.setPower(kS);
 
         telemetry.addData("Step Atual", "%.6f", currentStep);
         telemetry.addData("kS", "%.6f", kS);
-        telemetry.addData("Velocidade Atual", robo.motor_sho.getVelocity());
+        telemetry.addData("Velocidade Atual", robo.motor_shoP.getVelocity());
         telemetry.update();
     }
 }

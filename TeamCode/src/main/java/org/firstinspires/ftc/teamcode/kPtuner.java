@@ -43,15 +43,15 @@ public class kPtuner extends OpMode {
         }
 
         double feedForward = (kV * goalRPM) + kS;
-        double error = goalRPM - (robo.motor_sho.getVelocity() * 60) / 28;
+        double error = goalRPM - (robo.motor_shoP.getVelocity() * 60) / 28;
         double feedBack = error * kP;
-        robo.motor_sho.setPower(feedForward + feedBack);
+        robo.motor_shoP.setPower(feedForward + feedBack);
         robo.motor_tra.setPower(1);
 
         telemetry.addData("Step Atual", "%.6f", currentStep);
         telemetry.addData("kP", "%.6f", kP);
         telemetry.addData("error", error);
-        telemetry.addData("RPM Atual", (robo.motor_sho.getVelocity() * 60) / 28);
+        telemetry.addData("RPM Atual", (robo.motor_shoP.getVelocity() * 60) / 28);
         telemetry.update();
     }
 }
