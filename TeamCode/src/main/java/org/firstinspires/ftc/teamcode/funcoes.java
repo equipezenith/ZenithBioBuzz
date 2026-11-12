@@ -20,6 +20,12 @@ public class funcoes extends chassi {
     private Servo servoAtivo = null;
     private final ElapsedTime holdTimer = new ElapsedTime();
     private static final double TEMPO_MINIMO_SEG = 1.0;
+    // Configuração das posições dos servos
+    public static final double POS_NECTAR_ABERTO = 1.0; // Abre 180° (1.0)
+    public static final double POS_POLEN_ABERTO  = 0.5; // Abre 90°  (0.5)
+    public static final double POS_FECHADO       = 0.0; // Posição fechada (0.0)
+
+    private double posAbertoAtual = POS_FECHADO; // Posição do ciclo ativo
 
     // Sistema de Visão
     public Sistema_visao vision_cor = new Sistema_visao();
@@ -141,8 +147,17 @@ public class funcoes extends chassi {
             case ARMADO:
                 if (ativo && novoCiclo && (nectarDetectado || polenDetectado)) {
                     novoCiclo = false;
-                    servoAtivo = nectarDetectado ? indexerN : indexerP;
-                    servoAtivo.setPosition(0);
+
+                    // Seleciona o servo e a amplitude de abertura desejada
+                    if (nectarDetectado) {
+                        servoAtivo = indexerN;
+                        posAbertoAtual = POS_NECTAR_ABERTO; // 1.0
+                    } else {
+                        servoAtivo = indexerP;
+                        posAbertoAtual = POS_POLEN_ABERTO;  // 0.5
+                    }
+
+                    servoAtivo.setPosition(posAbertoAtual);
                     holdTimer.reset();
                     estado = Estado.SEGURANDO;
                 }
@@ -151,7 +166,7 @@ public class funcoes extends chassi {
             case SEGURANDO:
                 if (holdTimer.seconds() >= TEMPO_MINIMO_SEG) {
                     if (servoAtivo != null) {
-                        servoAtivo.setPosition(1);
+                        servoAtivo.setPosition(POS_FECHADO); // Retorna a 0.0
                         servoAtivo = null;
                     }
                     estado = Estado.TRAVADO;
@@ -159,8 +174,9 @@ public class funcoes extends chassi {
                 break;
 
             case TRAVADO:
-                // Re-arma a maquina de estados quando o elemento sair do sensor de visão
+                // Re-arma quando o elemento sai do campo de visão da câmera
                 if (!nectarDetectado && !polenDetectado) {
+                    novoCiclo = true;
                     estado = Estado.ARMADO;
                 }
                 break;

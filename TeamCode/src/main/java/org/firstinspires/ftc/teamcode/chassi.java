@@ -11,7 +11,6 @@ import org.firstinspires.ftc.vision.VisionPortal;
 
 public class chassi {
 
-    /** Manche abaixo disso não conta como "o motorista mexeu". */
     public static double ZONA_MORTA = 0.05;
 
     private final Follower follower;
@@ -28,12 +27,11 @@ public class chassi {
         follower.update();
     }
 
-    /** Chame UMA vez por ciclo do loop, antes das outras funções. */
+
     public void atualizar() {
         follower.update();
     }
 
-    /** Anda (robot-centric) com prioridade sobre o alinhamento. Sem manche, segura a posição. */
     public void andar(double frente, double lateral, double giro) {
         boolean mexeu = Math.abs(frente) > ZONA_MORTA
                 || Math.abs(lateral) > ZONA_MORTA
@@ -50,14 +48,12 @@ public class chassi {
         andar(-gamepad.left_stick_y, gamepad.left_stick_x, gamepad.right_stick_x);
     }
 
-    /** Igual ao andar(gamepad), com escala (0.3 = 30%, para o modo lento). */
     public void andar(Gamepad gamepad, double escala) {
         andar(-gamepad.left_stick_y * escala,
                 gamepad.left_stick_x * escala,
                 gamepad.right_stick_x * escala);
     }
 
-    /** Vai até o ponto do arco mais perto. Retorna true se começou a andar. */
     public boolean alinharHive() {
         Pose atual = follower.pose();
         Pose alvo = ArcoHive.nearestArcPose(atual);
@@ -67,7 +63,6 @@ public class chassi {
         return true;
     }
 
-    /** Versão para botão: só dispara quando o botão é apertado. */
     public boolean alinharHive(boolean botao) {
         boolean disparou = botao && !botaoAnterior;
         botaoAnterior = botao;
@@ -78,7 +73,6 @@ public class chassi {
         ManualDrive.driveOrHold(follower, 0, 0, 0);
     }
 
-    /** true enquanto o robô ainda está indo ao arco. */
     public boolean alinhando() {
         return "FOLLOW".equals(String.valueOf(follower.mode())) && follower.isBusy();
     }
