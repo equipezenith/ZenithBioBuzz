@@ -68,6 +68,14 @@ public class ArcoHive {
         return new Pose(px, py, headingToHive(px, py) + Math.toRadians(HEADING_OFFSET_DEG));
     }
 
+    /** Ponto mais perto do robô, somente no arco escolhido (superior ou inferior). */
+    public static Pose nearestPoseOnArc(Pose robot, boolean superior) {
+        if (superior) {
+            return nearestPoseOnArc(robot, 360 - ARC_END_DEG, 360 - ARC_START_DEG);
+        }
+        return nearestPoseOnArc(robot, ARC_START_DEG, ARC_END_DEG);
+    }
+
     /** Ponto do arco de tiro MAIS PRÓXIMO (inferior ou superior), já com heading para o hive. */
     public static Pose nearestArcPose(Pose robot) {
         Pose inferior = nearestPoseOnArc(robot, ARC_START_DEG, ARC_END_DEG);

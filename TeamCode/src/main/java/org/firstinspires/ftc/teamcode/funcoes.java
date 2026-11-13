@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class funcoes extends chassi {
@@ -20,6 +22,8 @@ public class funcoes extends chassi {
     private Servo servoAtivo = null;
     private final ElapsedTime holdTimer = new ElapsedTime();
     private static final double TEMPO_MINIMO_SEG = 1.0;
+    private boolean shooterPPronto = false;
+    private boolean shooterNPronto = false;
     // Configuração das posições dos servos
     public static final double POS_NECTAR_ABERTO = 1.0; // Abre 180° (1.0)
     public static final double POS_POLEN_ABERTO  = 0.5; // Abre 90°  (0.5)
@@ -62,8 +66,8 @@ public class funcoes extends chassi {
         vision_cor.init(hardwareMap, "CAMERA_COR", Sistema_visao.Mode.COLOR, 0);
     }
 
-    public void intake_Off(Gamepad gamepad2, Telemetry telemetry) {
-        if (gamepad2.left_bumper) {
+    public void intake_Off(Gamepad gamepad, Telemetry telemetry) {
+        if (gamepad.right_bumper) {
             motor_in.setDirection(DcMotorSimple.Direction.REVERSE);
             motor_in.setPower(1);
             in_state = true;
@@ -73,8 +77,8 @@ public class funcoes extends chassi {
         }
     }
 
-    public void intake_Off_inv(Gamepad gamepad2, Telemetry telemetry) {
-        if (gamepad2.left_bumper) {
+    public void intake_Off_inv(Gamepad gamepad, Telemetry telemetry) {
+        if (gamepad.left_bumper) {
             motor_in.setPower(1);
             in_state = true;
         } else {
@@ -85,57 +89,52 @@ public class funcoes extends chassi {
 
     public void shooterOPPolem(Telemetry telemetry) {
         double kS = 0.262, kV = 0.000227, kP = 0.0052;
+        double goalRPM = 1700;
         indexerN.setPosition(0);
         indexerP.setPosition(0);
-        double goalRPM = 1700;
-        double goalTicks = (goalRPM * 28) / 60;
-        boolean goalReached = false;
-        double feedForward = (kV * goalRPM) + kS;
-        double error = goalRPM - (motor_shoP.getVelocity() * 60) / 28;
-        double feedBack = error * kP;
-        double powerP = feedBack + feedForward;
 
-        motor_shoP.setPower(powerP);
-        if (goalTicks - 9.5 >= motor_shoP.getVelocity()) {
-            goalReached = true;
-        }
-        if (motor_shoP.getVelocity() >= goalTicks - 9.5 || (goalReached && motor_shoP.getVelocity() >= goalTicks - 50)) {
-            motor_tra.setPower(1);
-        } else {
-            motor_tra.setPower(0);
-        }
+        double rpmAtual = (motor_shoP.getVelocity() * 60) / 28;
+        double error = goalRPM - rpmAtual;
+        double power = kS + (kV * goalRPM) + (kP * error);
+        motor_shoP.setPower(Range.clip(power, 0, 1));
 
-        telemetry.addData("error", error);
-        telemetry.addData("RPM Atual", (motor_shoP.getVelocity() * 60) / 28);
-        telemetry.addData("Shooter pronto?:", goalReached);
+        // Histerese: liga perto da meta, só desliga se cair bastante
+        if (rpmAtual >= goalRPM - 20) shooterPPronto = true;
+        else if (rpmAtual < goalRPM - 120) shooterPPronto = false;
+
+        motor_tra.setPower(shooterPPronto ? 1 : 0);
+
+        telemetry.addData("RPM P", rpmAtual);
+        telemetry.addData("P pronto?", shooterPPronto);
     }
 
     public void shooterOPNectar(Telemetry telemetry) {
-        indexerN.setPosition(1);
-        indexerP.setPosition(1);
         double kS = 0.302, kV = 0.000171, kP = 0.006;
         double goalRPM = 1928;
-        double goalTicks = (goalRPM * 28) / 60;
-        double RPMatual = (motor_shoN.getVelocity() * 60) / 28;
-        boolean goalReached = false;
-        double feedForward = (kV * goalRPM) + kS;
-        double error = goalRPM - (motor_shoN.getVelocity() * 60) / 28;
-        double feedBack = error * kP;
-        double powerN = feedBack + feedForward;
+        indexerN.setPosition(1);
+        indexerP.setPosition(1);
 
-        motor_shoN.setPower(powerN);
-        if (RPMatual >= goalRPM) {
-            goalReached = true;
-        }
-        if (motor_shoN.getVelocity() >= goalTicks) {
-            motor_tra.setPower(1);
-        } else {
-            motor_tra.setPower(0);
-        }
+        double rpmAtual = (motor_shoN.getVelocity() * 60) / 28;
+        double error = goalRPM - rpmAtual;
+        double power = kS + (kV * goalRPM) + (kP * error);
+        motor_shoN.setPower(Range.clip(power, 0, 1));
 
-        telemetry.addData("error", error);
-        telemetry.addData("RPM Atual", (motor_shoN.getVelocity() * 60) / 28);
-        telemetry.addData("Shooter pronto?:", goalReached);
+        if (rpmAtual >= goalRPM - 20) shooterNPronto = true;
+        else if (rpmAtual < goalRPM - 120) shooterNPronto = false;
+
+        motor_tra.setPower(shooterNPronto ? 1 : 0);
+
+        telemetry.addData("RPM N", rpmAtual);
+        telemetry.addData("N velocity bruta", motor_shoN.getVelocity());
+        telemetry.addData("N pronto?", shooterNPronto);
+    }
+
+    public void pararShooters() {
+        motor_shoN.setPower(0);
+        motor_shoP.setPower(0);
+        motor_tra.setPower(0);
+        shooterNPronto = false;
+        shooterPPronto = false;
     }
 
     public void atualizarServoPorCor(boolean ativo) {

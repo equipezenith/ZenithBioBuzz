@@ -1,16 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.Range;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
-
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
-import org.firstinspires.ftc.vision.apriltag.AprilTagSingleDetection;
 
 import java.util.Arrays;
 
@@ -19,64 +18,72 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 /**
  * Gamepad1:
- *   A         -> vai ao ponto do arco mais perto e depois alinha com a câmera
- *   D-pad ←   -> reset de posição no canto superior esquerdo
- *   D-pad →   -> reset de posição no canto inferior esquerdo
- * Alinhamento: giro pelo bearing da tag, distância pelo ftcPose.range (sem FMAP).
- * Parado, os manches dirigem normalmente.
+ *   A         -> vai ao arco mais próximo (superior ou inferior) e alinha com a Limelight
+ *   D-pad ←   -> reset no canto superior esquerdo
+ *   D-pad →   -> reset no canto inferior esquerdo
+ * Giro: PD no tx da tag. Distância: horizontal, calculada pelo ty + geometria da montagem.
  */
 @Config
-@TeleOp(name = "Ir ao Arco + Alinhar (câmera)", group = "Teste")
+@TeleOp(name = "Ir ao Arco + Alinhar (Limelight)", group = "Teste")
 public class IrAoArco extends OpMode {
 
-    // Pose de partida: canto inferior esquerdo, robô encostado nas paredes, virado para cima
+    // Pose de partida: canto inferior esquerdo
     public static double START_X = 9, START_Y = 9, START_HEADING_DEG = 90;
 
-    // Reset de posição nos cantos (centro ~9 in da parede para um robô de ~18 in)
-    public static double RESET_BL_X = 9, RESET_BL_Y = 9, RESET_BL_HEADING_DEG = 90;   // canto inferior esquerdo
-    public static double RESET_TL_X = 9, RESET_TL_Y = 135, RESET_TL_HEADING_DEG = 90; // canto superior esquerdo
+    // Resets nos cantos
+    public static double RESET_BL_X = 9, RESET_BL_Y = 9, RESET_BL_HEADING_DEG = 90;
+    public static double RESET_TL_X = 9, RESET_TL_Y = 135, RESET_TL_HEADING_DEG = 90;
 
-    // Câmera
-    public static String CAMERA_TAG = "Webcam 2";
+    // ===================== LIMELIGHT =====================
+    public static String LIMELIGHT_NAME = "limelight";
+    public static int PIPELINE_TAG = 0;
+    public static int POLL_RATE_HZ = 100;
+    public static double CAMERA_HEIGHT_MM = 262.88; // altura da lente no chão
+    public static double CAMERA_ANGLE_DEG = 49;     // + = câmera inclinada para cima
+    public static double TAG_HEIGHT_MM = 1261;      // altura do centro da tag
 
-    // ===================== TAGS DAS DUAS FACES DO HIVE (gangorra) =====================
-    // A face (e as tags) depende do ARCO escolhido: arco inferior -> face inferior, arco superior -> face superior.
-    // PLACEHOLDER no superior: confirme os IDs da face de cima.
-    private static final int[] TAGS_FACE_INFERIOR = {42, 43, 44, 45};  // arco de baixo (azul, por enquanto)
-    private static final int[] TAGS_FACE_SUPERIOR = {38, 39, 40, 41};  // arco de cima (placeholder)
+    private static final double MM_TO_IN = 1.0 / 25.4;
 
-    // Distância: da LENTE da câmera até a face da tag, na posição de tiro (polegadas). MEÇA.
+    // Distância horizontal desejada até a tag, na posição de tiro (polegadas)
     public static double DESIRED_RANGE_IN = 30;
     public static double RANGE_TOLERANCE_IN = 1.0;
     public static double kRange = 0.03;
     public static double MAX_DRIVE = 0.4;
 
-    // Giro (PD do tutorial)
-    public static double GOAL_X = 0;
-    public static double ANGLE_TOLERANCE = 0.5;
+    // Giro (PD)
+    public static double GOAL_X = 0;               // tx desejado (graus)
+    public static double ANGLE_TOLERANCE = 0.5;    // graus
     public static double kP = 0.002;
     public static double kD = 0.0001;
     public static double MAX_ROTATE = 0.4;
-    public static double CAMERA_TURN_SIGN = 1;      // -1 se girar para o lado errado
-    public static double kHeadingP = 0.015;         // fallback pela odometria quando a tag some
+    public static double CAMERA_TURN_SIGN = 1;     // -1 se girar para o lado errado
+    public static double kHeadingP = 0.015;
 
     public static double ALIGN_TIMEOUT_S = 5;
+
+    // ===================== TAGS DAS DUAS FACES DO HIVE =====================
+    // Arco inferior -> face inferior. Arco superior -> face superior.
+    // PLACEHOLDER no superior: confirme os IDs da face de cima.
+    private static final int[] TAGS_FACE_INFERIOR = {42, 43, 44, 45};  // azul, por enquanto
+    private static final int[] TAGS_FACE_SUPERIOR = {38, 39, 40, 41};  // placeholder
 
     private enum State { MANUAL, DRIVE_TO_ARC, ALIGN }
 
     private Follower follower;
-    private final Sistema_visao visaoTag = new Sistema_visao();
+    private Limelight3A limelight;
 
     private State state = State.MANUAL;
     private Pose arcTarget = null;
+    private int[] tagsAlinhamento = TAGS_FACE_INFERIOR;
+    private String faceEscolhida = "inferior";
+    private boolean superiorAlvo = false; // D-pad cima = superior, D-pad baixo = inferior
+    private boolean upPrev = false;
+    private boolean downPrev = false;
     private String ultimoReset = "nenhum";
 
     private boolean aPrev = false;
     private boolean leftPrev = false;
     private boolean rightPrev = false;
-
-    private int[] tagsAlinhamento = TAGS_FACE_INFERIOR; // travada quando o alinhamento começa
-    private String faceEscolhida = "inferior";
 
     private double lastError = 0;
     private double lastTime = 0;
@@ -88,10 +95,10 @@ public class IrAoArco extends OpMode {
         follower = Constants.create(hardwareMap);
         follower.setPose(new Pose(START_X, START_Y, Math.toRadians(START_HEADING_DEG)));
 
-        // A câmera começa a transmitir AQUI (no INIT), não na chegada ao arco
-        int[] viewIds = VisionPortal.makeMultiPortalView(1, VisionPortal.MultiPortalLayout.VERTICAL);
-        visaoTag.init(hardwareMap, CAMERA_TAG, Sistema_visao.Mode.APRILTAG, viewIds[0]);
-        visaoTag.setManualExposure();
+        limelight = hardwareMap.get(Limelight3A.class, LIMELIGHT_NAME);
+        limelight.pipelineSwitch(PIPELINE_TAG);
+        limelight.setPollRateHz(POLL_RATE_HZ);
+        limelight.start(); // sem start() os resultados nunca são válidos
 
         telemetry.addLine("Pronto. Canto inferior esquerdo. A = ir ao arco e alinhar.");
         telemetry.update();
@@ -101,6 +108,17 @@ public class IrAoArco extends OpMode {
     public void loop() {
         follower.update();
         Pose pose = follower.pose();
+
+        // Tag do lado ativo vista agora (uma leitura por loop)
+        LLResultTypes.FiducialResult tagVista = melhorFiducial(tagsAlinhamento);
+
+        // D-pad cima/baixo: escolhe o arco-alvo (superior / inferior)
+        boolean upNow = gamepad1.dpad_up;
+        boolean downNow = gamepad1.dpad_down;
+        if (upNow && !upPrev) superiorAlvo = true;
+        if (downNow && !downPrev) superiorAlvo = false;
+        upPrev = upNow;
+        downPrev = downNow;
 
         // Resets nos cantos: só parado e no manual
         boolean leftNow = gamepad1.dpad_left;
@@ -121,7 +139,7 @@ public class IrAoArco extends OpMode {
         // A: só a partir do manual
         boolean aNow = gamepad1.a;
         if (aNow && !aPrev && state == State.MANUAL) {
-            arcTarget = ArcoHive.nearestArcPose(pose);
+            arcTarget = ArcoHive.nearestPoseOnArc(pose, superiorAlvo);
             if (ArcoHive.distance(pose, arcTarget) > ArcoHive.ON_ARC_TOLERANCE) {
                 follower.follow(ArcoHive.buildPath(pose, arcTarget)); // confira o nome na sua versão
                 state = State.DRIVE_TO_ARC;
@@ -150,7 +168,6 @@ public class IrAoArco extends OpMode {
                 break;
 
             case ALIGN: {
-                AprilTagSingleDetection tag = melhorTag(tagsAlinhamento);
                 double now = getRuntime();
                 double dt = now - lastTime;
                 lastTime = now;
@@ -160,9 +177,9 @@ public class IrAoArco extends OpMode {
 
                 if (now - alignStart > ALIGN_TIMEOUT_S) {
                     state = State.MANUAL;
-                } else if (tag != null) {
-                    double bearingErr = GOAL_X - tag.ftcPose.bearing;
-                    double rangeErr = tag.ftcPose.range - DESIRED_RANGE_IN;
+                } else if (tagVista != null) {
+                    double bearingErr = GOAL_X - tagVista.getTargetXDegrees();
+                    double rangeErr = distanciaHorizontalIn(tagVista) - DESIRED_RANGE_IN;
 
                     boolean rotOk = Math.abs(bearingErr) < ANGLE_TOLERANCE;
                     boolean rangeOk = Math.abs(rangeErr) < RANGE_TOLERANCE_IN;
@@ -176,11 +193,11 @@ public class IrAoArco extends OpMode {
                         hasLastError = true;
 
                         rotate = CAMERA_TURN_SIGN * Range.clip(bearingErr * kP + derivative * kD, -MAX_ROTATE, MAX_ROTATE);
-                        // range > alvo = longe demais = anda para frente
+                        // distância maior que o alvo = longe demais = anda para frente
                         forward = rangeOk ? 0 : Range.clip(rangeErr * kRange, -MAX_DRIVE, MAX_DRIVE);
                     }
                 } else {
-                    // Tag fora de vista: gira pela odometria em direção ao hive, sem andar para frente
+                    // Tag fora de vista: gira pela odometria em direção ao hive
                     hasLastError = false;
                     double desired = ArcoHive.headingToHive(pose.x(), pose.y())
                             + Math.toRadians(ArcoHive.HEADING_OFFSET_DEG);
@@ -199,15 +216,17 @@ public class IrAoArco extends OpMode {
         telemetry.addData("Pose", "x %.1f  y %.1f  h %.1f°",
                 pose.x(), pose.y(), Math.toDegrees(pose.heading()));
         telemetry.addData("Último reset", ultimoReset);
+        telemetry.addData("Alvo (D-pad ↑/↓)", superiorAlvo ? "superior" : "inferior");
         telemetry.addData("Face usada", faceEscolhida);
         telemetry.addData("Tags procuradas", Arrays.toString(tagsAlinhamento));
         if (arcTarget != null) {
             telemetry.addData("Alvo no arco", "x %.1f  y %.1f", arcTarget.x(), arcTarget.y());
         }
-        AprilTagSingleDetection t = melhorTag(tagsAlinhamento);
-        if (t != null) {
-            telemetry.addData("Distância (lente→tag)", "%.1f in (alvo %.1f)", t.ftcPose.range, DESIRED_RANGE_IN);
-            telemetry.addData("Bearing", "%.1f°", t.ftcPose.bearing);
+        if (tagVista != null) {
+            telemetry.addData("Tag vista", tagVista.getFiducialId());
+            telemetry.addData("Distância horizontal", "%.1f in (alvo %.1f)",
+                    distanciaHorizontalIn(tagVista), DESIRED_RANGE_IN);
+            telemetry.addData("tx", "%.2f°", tagVista.getTargetXDegrees());
         } else {
             telemetry.addLine("Nenhuma tag do lado ativo visível");
         }
@@ -216,18 +235,28 @@ public class IrAoArco extends OpMode {
 
     @Override
     public void stop() {
-        visaoTag.close();
+        limelight.stop();
     }
 
-    /** Entre as tags visíveis que estão na lista, devolve a mais centralizada (menor |bearing|). */
-    private AprilTagSingleDetection melhorTag(int[] ids) {
-        AprilTagSingleDetection best = null;
-        for (AprilTagDetection d : visaoTag.getDetections()) {
-            if (!(d instanceof AprilTagSingleDetection)) continue;
-            AprilTagSingleDetection s = (AprilTagSingleDetection) d;
-            if (!contem(ids, s.id)) continue;
-            if (best == null || Math.abs(s.ftcPose.bearing) < Math.abs(best.ftcPose.bearing)) {
-                best = s;
+    // ===================== Limelight =====================
+
+    /** Distância horizontal (chão) até a tag, em polegadas, a partir do ty. */
+    private double distanciaHorizontalIn(LLResultTypes.FiducialResult f) {
+        double angulo = Math.toRadians(CAMERA_ANGLE_DEG + f.getTargetYDegrees());
+        double deltaH = (TAG_HEIGHT_MM - CAMERA_HEIGHT_MM) * MM_TO_IN;
+        return deltaH / Math.tan(angulo);
+    }
+
+    /** Entre as tags visíveis da lista, devolve a mais centralizada (menor |tx|). */
+    private LLResultTypes.FiducialResult melhorFiducial(int[] ids) {
+        LLResult result = limelight.getLatestResult();
+        if (result == null || !result.isValid()) return null;
+
+        LLResultTypes.FiducialResult best = null;
+        for (LLResultTypes.FiducialResult f : result.getFiducialResults()) {
+            if (!contem(ids, f.getFiducialId())) continue;
+            if (best == null || Math.abs(f.getTargetXDegrees()) < Math.abs(best.getTargetXDegrees())) {
+                best = f;
             }
         }
         return best;
@@ -240,13 +269,15 @@ public class IrAoArco extends OpMode {
         return false;
     }
 
+    // ===================== estado =====================
+
     private void resetPose(double x, double y, double headingDeg) {
         follower.setPose(new Pose(x, y, Math.toRadians(headingDeg)));
     }
 
     private void startAlign() {
-        // Escolhe a face pelo arco em que o robô está e trava até o fim do alinhamento
-        boolean superior = ArcoHive.isSuperior(arcTarget);
+        // A face é escolhida pelo arco em que o robô está e fica travada até o fim do alinhamento
+        boolean superior = superiorAlvo;
         tagsAlinhamento = superior ? TAGS_FACE_SUPERIOR : TAGS_FACE_INFERIOR;
         faceEscolhida = superior ? "superior (arco de cima)" : "inferior (arco de baixo)";
 
